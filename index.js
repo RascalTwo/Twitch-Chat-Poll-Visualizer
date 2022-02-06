@@ -150,6 +150,7 @@ const player = (() => {
 									return context.dataset.data[context.dataIndex] === 0 ? 'transparent' : 'white'
 								}
 							},
+							legend: { display: false }
 						}
 					}
 				})
@@ -182,9 +183,7 @@ const player = (() => {
 							x: { grid: { color: 'rgba(255, 255, 255, 0.25)' } },
 							y: { grid: { color: 'rgba(255, 255, 255, 0.25)' } }
 						},
-						legend: {
-							display: false
-						}
+						plugins: { legend: { display: false } }
 					}
 				});
 				this.chart.canvas.parentElement.classList.remove('hidden');
@@ -332,10 +331,15 @@ const player = (() => {
 			else graphs[type].destroy();
 			await delay(1);
 			const activeGraphs = Object.values(graphs).reduce((total, { chart }) => total + (chart ? 1 : 0), 0);
+			let currentFound = false;
 			Object.values(graphs).filter(({ chart }) => chart).map((graph) => {
-				graph.chart.canvas.parentElement.style.height = 80 / activeGraphs + 'vh';
+				graph.chart.canvas.parentElement.style.height = 87.5 / activeGraphs + 'vh';
 				graph.destroy();
 				graph.initialize();
+				graph.canvas.parentNode.querySelector('.current').classList.toggle('hidden', currentFound);
+				graph.chart.options.plugins.legend.display = !currentFound;
+				graph.chart.update();
+				currentFound = true;
 			});
 		},
 		stop() {
