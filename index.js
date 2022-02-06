@@ -144,7 +144,12 @@ const player = (() => {
 									fontColor: 'black',
 									fontSize: 20
 								}
-							]
+							],
+							datalabels: {
+								color(context) {
+									return context.dataset.data[context.dataIndex] === 0 ? 'transparent' : 'white'
+								}
+							},
 						}
 					}
 				})
