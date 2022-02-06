@@ -1,0 +1,90 @@
+html {
+	box-sizing: border-box;
+	font-size: 62.5%;
+	text-align: center;
+	font-size: 1.25rem;
+}
+
+*, *::before, *::after {
+	box-sizing: inherit;
+}
+
+body {
+	background-color: rgb(32, 34, 37);
+	background-color: #36393f;
+	background-color: #36393e;
+	/*background-color: rgba(4, 4, 5, 0.07);*/
+	color: white;
+	padding: 0;
+	margin: 0;
+}
+
+input {
+	text-align: center;
+}
+
+
+.current {
+	text-align: center;
+}
+
+body > fieldset {
+	padding: 0;
+}
+
+summary {
+	position: absolute;
+	left: 2rem;
+}
+
+.settings fieldset {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.settings fieldset > label {
+	cursor: pointer;
+}
+.settings fieldset > label input {
+	display: none;
+}
+
+.settings ul {
+	list-style: none;
+}
+
+.settings ul li {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+}
+.settings ul li > * {
+	width: 100%;
+}
+
+.controls {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	grid-template-rows: repeat(3, 1fr);
+}
+
+
+.controls > div {
+	display: flex;
+	flex-direction: column;
+	grid-row: 1/4;
+	grid-column: 2/3;
+}
+
+.hidden {
+	display: none;
+}
+
+#player {
+	width: 95vw;
+	margin: auto;
+}
+
+#player > div {
+	padding-top: 5vh;
+}

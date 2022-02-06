@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+	<head>
+		<meta charset="UTF-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Twitch Answers</title>
+		<link rel="stylesheet" href="index.css" />
+	</head>
+
+	<body>
+		<fieldset>
+			<details open>
+				<summary>Settings</summary>
+				<form class="settings">
+					<fieldset>
+						<label>Upload Chat JSON<input type="file" /></label>
+						<ul>
+							<li>
+								<span>Color</span>
+								<span>Label</span>
+								<span>Keywords</span>
+								<span>Remove</span>
+							</li>
+						</ul>
+						<button type="button">+</button>
+					</fieldset>
+				</form>
+			</details>
+			<div class="controls">
+				<span></span>
+				<div>
+					<button type="button" id="play-button">Play</button>
+					<input name="current" placeholder="Current" value="00:00:00:00" autocomplete="off"  />
+					<input name="rate" type="number" min="1" max="100" placeholder="Rate" value="1" />
+				</div>
+				<label>Pie<input name="pie-graph" type="checkbox" checked /></label>
+				<input name="start" placeholder="Start" autocomplete="on" value="00:00:00:00" />
+				<input name="end" placeholder="End" autocomplete="off" />
+				<label>Line<input name="line-graph" type="checkbox" checked /></label>
+				<label>Word Cloud<input name="word-graph" type="checkbox" disabled /></label>
+			</div>
+		</fieldset>
+		<section id="player">
+			<div>
+				<span class="current">0</span>
+				<canvas></canvas>
+			</div>
+			<div>
+				<span class="current">0</span>
+				<canvas></canvas>
+			</div>
+			<div>
+				<span class="current">0</span>
+				<canvas></canvas>
+			</div>
+		</section>
+		<!--<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js" integrity="sha256-Y26AMvaIfrZ1EQU49pf6H4QzVTrOI8m9wQYKkftBt4s=" crossorigin="anonymous"></script>-->
+		<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+		<script src="package/build/index.umd.js"></script>
+		<script src="shlex.js"></script>
+		<script src="index.js"></script>
+	</body>
+
+</html>
