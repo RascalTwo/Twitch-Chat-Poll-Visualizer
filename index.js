@@ -94,7 +94,7 @@ function addVariant(id = Date.now()) {
 	list.appendChild(li);
 }
 
-document.querySelector('fieldset fieldset button').addEventListener('click', addVariant);
+document.querySelector('fieldset fieldset button').addEventListener('click', addVariant.bind(null, undefined));
 
 // #endregion Variants
 
