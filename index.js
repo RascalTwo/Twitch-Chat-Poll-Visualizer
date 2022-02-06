@@ -368,7 +368,9 @@ const player = (() => {
 			}
 			playButton.textContent = 'Pause'
 			this.show();
+			wrapper.style.opacity = '0';
 			await delay(1000)
+			wrapper.style.opacity = '1';
 			interval = setInterval(playFrame, 100);
 		},
 		isPlaying: () => !!interval,
