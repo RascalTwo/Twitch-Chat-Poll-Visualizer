@@ -181,7 +181,7 @@ const player = (() => {
 						maintainAspectRatio: false,
 						scales: {
 							x: { grid: { color: 'rgba(255, 255, 255, 0.25)' } },
-							y: { grid: { color: 'rgba(255, 255, 255, 0.25)' } }
+							y: { grid: { color: 'rgba(255, 255, 255, 0.25)' }, ticks: { precision: 0 } }
 						},
 						plugins: { legend: { display: false } }
 					}
