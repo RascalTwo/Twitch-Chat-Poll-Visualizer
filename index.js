@@ -5,7 +5,6 @@ const getKeywords = e => shlexSplit(e.value)
 
 const offsetToDate = (start, offset) => {
 	const date = new Date(start)
-	// TODO - fix offset being wrong
 	date.setSeconds(start.getSeconds() + offset)
 	return date
 }
@@ -63,14 +62,55 @@ function secondsToDHMS(seconds, minimalPlaces = 1) {
 
 // #endregion Helpers
 
-Chart.defaults.color = 'white'
+// #region Theme
+
+const [addThemeListener, getCurrentTheme, renderTheme] = (() => {
+	const THEME_COLORS = {
+		'Light': ['white', 'black'],
+		'Dark': ['black', 'white'],
+		'Discord': ['#36393e', 'white'],
+		'Twitter Dim': ['rgb(21, 32, 43)', 'white']
+	}
+	const html = document.querySelector('html');
+	const select = document.querySelector('select');
+	select.children[+window.matchMedia('(prefers-color-scheme: dark)').matches].setAttribute('selected', '');
+
+	const listeners = [];
+
+	const renderTheme = async (background, text) => {
+		if (!background || !text) ([background, text] = THEME_COLORS[select.value]);
+		html.style.setProperty('--background-color', background);
+		html.style.setProperty('--color', text);
+		for (const listener of listeners) await listener(background, text);
+	}
+	renderTheme()
+
+
+	select.addEventListener('change', ({ currentTarget: { value } }) => renderTheme(...THEME_COLORS[value]));
+
+	return [
+		(listener) => {
+			listeners.push(listener);
+			listener(...THEME_COLORS[select.value])
+		},
+		() => THEME_COLORS[select.value],
+		renderTheme
+	]
+})()
+
+addThemeListener((background, text) => {
+	Chart.defaults.color = text;
+});
+
+// #endregion Theme
+
 Chart.defaults.font.size = 16;
 
-const nowInput = document.querySelector('[placeholder="Current"]')
+const nowInput = document.querySelector('[name="current"]')
 const playButton = document.querySelector('#play-button')
-const rateInput = document.querySelector('[type="number"]')
-const endInput = document.querySelector('[placeholder="End"]')
-const nowElements = document.querySelectorAll('.current');
+const rateInput = document.querySelector('[name="rate"]')
+const endInput = document.querySelector('[name="end"]')
+const nowDisplay = document.querySelector('.current');
 const settings = document.querySelector('.settings')
 
 // #region Variants
@@ -103,11 +143,13 @@ document.querySelector('[type="file"]').addEventListener('change', ({ currentTar
 	const durationMS = messages.slice(-1)[0].created_at - messages[0].created_at;
 	if (!endInput.value) endInput.value = secondsToDHMS(parseInt(durationMS / 1000));
 	player.setMessages(messages);
+	alert(`${messages.length} messages loaded`);
 }));
 
 
+let binSize = 1;
+
 const player = (() => {
-	const LINE_ACCR = 30;
 
 	const wrapper = document.querySelector('#player');
 	function destroyGraph() {
@@ -124,6 +166,7 @@ const player = (() => {
 				return destroyGraph.call(this);
 			},
 			initialize() {
+				this.canvas.parentElement.classList.remove('hidden');
 				this.chart = new Chart(this.canvas.getContext('2d'), {
 					type: 'pie',
 					plugins: [ChartDataLabels],
@@ -138,24 +181,19 @@ const player = (() => {
 						responsive: true,
 						maintainAspectRatio: false,
 						plugins: {
-							labels: [
-								{
-									render: ({ percentage, value }) => `${value} - ${percentage}%`,
-									fontColor: 'black',
-									fontSize: 20
-								}
-							],
 							datalabels: {
 								color(context) {
-									return context.dataset.data[context.dataIndex] === 0 ? 'transparent' : 'white'
+									return context.dataset.data[context.dataIndex] === 0 ? 'transparent' : getCurrentTheme()[1]
 								}
 							},
 							legend: { display: false }
 						}
 					}
 				})
-				this.chart.canvas.parentElement.classList.remove('hidden');
 			},
+			update() {
+				this.chart.update()
+			}
 		},
 		line: {
 			chart: null,
@@ -164,6 +202,8 @@ const player = (() => {
 				return destroyGraph.call(this);
 			},
 			initialize() {
+				this.canvas.parentElement.classList.remove('hidden');
+				const color = this.getLineColor();
 				this.chart = new Chart(this.canvas.getContext('2d'), {
 					type: 'line',
 					data: {
@@ -180,38 +220,20 @@ const player = (() => {
 						responsive: true,
 						maintainAspectRatio: false,
 						scales: {
-							x: { grid: { color: 'rgba(255, 255, 255, 0.25)' } },
-							y: { grid: { color: 'rgba(255, 255, 255, 0.25)' }, ticks: { precision: 0 } }
+							x: { grid: { color } },
+							y: { grid: { color }, ticks: { precision: 0 } }
 						},
 						plugins: { legend: { display: false } }
 					}
 				});
-				this.chart.canvas.parentElement.classList.remove('hidden');
-			}
-		},
-		word: {
-			chart: null,
-			canvas: document.querySelectorAll('canvas')[2],
-			destroy() {
-				return destroyGraph.call(this);
 			},
-			initialize() {
-				this.chart = new Chart(this.canvas.getContext('2d'), {
-					type: 'wordCloud',
-					data: {
-						labels: [''],
-						datasets: [{
-							label: '',
-							data: [50],
-						}]
-					},
-					options: {
-						responsive: true,
-						maintainAspectRatio: false,
-						title: { display: false },
-						plugins: { legend: { display: false } }
-					}
-				})
+			update() {
+				this.chart.options.scales.x.grid.color = this.chart.options.scales.y.grid.color = this.getLineColor();
+				this.chart.options.scales.x.ticks.color = this.chart.options.scales.y.ticks.color = getCurrentTheme()[1]
+				this.chart.update();
+			},
+			getLineColor() {
+				return getCurrentTheme()[1] === 'black' ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.25)';
 			}
 		}
 	}
@@ -225,22 +247,6 @@ const player = (() => {
 	let variants = [];
 
 	let userVotes = {}
-	let words = {}
-	const updateWordGraph = (() => {
-		let last = 0;
-		return () => {
-			const now = Date.now()
-			if (now - last < 5000) return
-			last = now;
-
-			const minimumCount = 0.01 * Math.max(...Object.values(words));
-
-			const chosenWords = Object.entries(words).filter(([_, count]) => count >= minimumCount)
-			graphs.word.chart.data.labels = chosenWords.map(([word]) => word);
-			graphs.word.chart.data.datasets[0].data = chosenWords.map(([_, count]) => count);
-			graphs.word.chart.update();
-		}
-	})()
 
 	function playFrame() {
 		const endSeconds = DHMStoSeconds(endInput.value.split(':').map(Number))
@@ -254,7 +260,7 @@ const player = (() => {
 		const graphData = {
 			pie: variants.map(() => 0),
 			line: {
-				labels: [],
+				labels: { first: '', last: '' },
 				counts: variants.map(() => ({}))
 			}
 		}
@@ -265,11 +271,6 @@ const player = (() => {
 		validMessages.map(message => {
 			const body = message.message.body.toLowerCase();
 			/** [[word index, variant index]] */
-			/*
-			body.split(/\s+/g).forEach(word => {
-				if (!(word in words)) words[word] = 0;
-				words[word] += 1
-			});*/
 			const vis = variants.map(({ keywords }) => keywords
 				.map((word, vi) => [body.indexOf(word), vi])
 				.filter(([wi]) => wi !== -1)
@@ -296,9 +297,10 @@ const player = (() => {
 			if (vis.filter(p => p.length).length !== 1) return;
 			const vi = vis.findIndex(p => p.length)
 			graphData.pie[vi] += change
-			const label = secondsToDHMS(parseInt((m.created_at - messages[0].created_at) / 1000 / LINE_ACCR) * LINE_ACCR, places)
+			const label = secondsToDHMS(parseInt((m.created_at - messages[0].created_at) / 1000 / binSize) * binSize, places)
 
-			if (!graphData.line.labels.includes(label)) graphData.line.labels.push(label)
+			if (!graphData.line.labels.first) graphData.line.labels.first = label;
+			graphData.line.labels.last = label;
 			graphData.line.counts[vi][label] = graphData.pie[vi];
 		})
 		if (graphs.pie.chart && arraysDiffer(graphs.pie.chart.data.datasets[0].data, graphData.pie)) {
@@ -306,20 +308,24 @@ const player = (() => {
 			graphs.pie.chart.update();
 		}
 		if (graphs.line.chart && arraysDiffer(graphs.line.chart.data.labels, graphData.line.labels)) {
-			graphs.line.chart.data.labels = graphData.line.labels
+			let current = DHMStoSeconds(graphData.line.labels.first.split(':').map(Number));
+			const end = DHMStoSeconds(graphData.line.labels.last.split(':').map(Number));
+			graphs.line.chart.data.labels = [graphData.line.labels.first];
+
+			while (current <= end) {
+				current += binSize;
+				graphs.line.chart.data.labels.push(secondsToDHMS(current, places));
+			}
 			Array.from(graphData.line.counts.entries()).forEach(([i, counts]) => {
 				graphs.line.chart.data.datasets[i].data = Object.entries(counts).sort((a, b) => a[0] - b[0]).map(([label, value]) => ({ x: label, y: value }))
 			})
 			graphs.line.chart.update()
 		}
-		if (graphs.word.chart) updateWordGraph();
-
-
 
 		nowInput.value = secondsToDHMS(nextOffset, places);
 		let prettyDHMS = secondsToDHMS(nextOffset, places);
 		if (rateInput.value < 1 && !prettyDHMS.includes('.')) prettyDHMS += '.0'
-		nowElements.forEach(s => s.textContent = prettyDHMS)
+		nowDisplay.textContent = prettyDHMS
 		if (nextOffset >= endSeconds) return player.pause()
 	}
 
@@ -329,18 +335,15 @@ const player = (() => {
 				if (!graphs[type].chart) graphs[type].initialize();
 			}
 			else graphs[type].destroy();
-			await delay(1);
 			const activeGraphs = Object.values(graphs).reduce((total, { chart }) => total + (chart ? 1 : 0), 0);
 			let currentFound = false;
-			Object.values(graphs).filter(({ chart }) => chart).map((graph) => {
-				graph.chart.canvas.parentElement.style.height = 87.5 / activeGraphs + 'vh';
-				graph.destroy();
-				graph.initialize();
-				graph.canvas.parentNode.querySelector('.current').classList.toggle('hidden', currentFound);
+			for (const graph of Object.values(graphs).filter(({ chart }) => chart)) {
+				graph.canvas.parentElement.style.height = 85 / activeGraphs + 'vh';
 				graph.chart.options.plugins.legend.display = !currentFound;
-				graph.chart.update();
+				await delay(1);
+				graph.update();
 				currentFound = true;
-			});
+			}
 		},
 		stop() {
 			this.pause();
@@ -353,15 +356,14 @@ const player = (() => {
 			playButton.textContent = 'Play'
 		},
 		show: () => wrapper.classList.remove('hidden'),
-		hide: () => wrapper.classList.remove('hidden'), // TODO - wordcloud CAN NOT be hidden during init
-		// TODO - somehow don't show duplicate/spammy words
-		// TODO - only show words of last minute
-		async play() {
+		hide: () => wrapper.classList.remove('hidden'),
+		async play(ms = 1000) {
 			userVotes = {}
 			messageIndex = 0
-			if (!messages.length) return
+			if (!messages.length) return alert('No Messages Loaded')
 
 			const startOffset = DHMStoSeconds(document.querySelector('[name="start"]').value.split(':').map(Number))
+			if (DHMStoSeconds(nowInput.value.split(':').map(Number)) < startOffset) nowInput.value = secondsToDHMS(startOffset);
 			const startDate = offsetToDate(messages[0].created_at, startOffset)
 			for (messageIndex = 0; messageIndex < messages.length; messageIndex++) {
 				if (messages[messageIndex].created_at >= startDate) break;
@@ -369,16 +371,16 @@ const player = (() => {
 			playButton.textContent = 'Pause'
 			this.show();
 			wrapper.style.opacity = '0';
-			await delay(1000)
+			await delay(ms)
 			wrapper.style.opacity = '1';
 			interval = setInterval(playFrame, 100);
 		},
 		isPlaying: () => !!interval,
 		visible: () => !wrapper.classList.contains('hidden'),
-		updateData(cb) {
+		async updateData(cb) {
 			const prev = this.isPlaying();
 			this.stop();
-			cb()
+			await cb()
 			this.setPlaying(prev);
 		},
 		setPlaying(playing) {
@@ -394,13 +396,14 @@ const player = (() => {
 			this.updateData(() => messages = newMessages)
 		},
 		setVariants(newVariants) {
-			this.updateData(() => {
+			this.updateData(async () => {
 				variants = newVariants
 				for (const key in graphs) {
 					const graph = graphs[key]
 					if (!graph.chart) continue;
 					graph.destroy();
 					graph.initialize();
+					await this.setGraph(key, true);
 				}
 			});
 		},
@@ -408,22 +411,38 @@ const player = (() => {
 			this.setPlaying(!this.isPlaying())
 		}
 	}
+
+	addThemeListener(async () => {
+		for (const [key] of Object.entries(graphs).filter(([_, { chart }]) => chart)) {
+			await player.setGraph(key, true);
+		}
+	})
+
 	return player;
 })();
+
+document.querySelector('#redraw-button').addEventListener('click', async () => {
+	const now = nowInput.value;
+	await player.play(0);
+	await delay(150);
+	await player.pause()
+	nowInput.value = now;
+})
 
 const updateVariants = () => player.setVariants(Array.from(settings.querySelector('ul').children).slice(1).map(getVariant))
 
 settings.addEventListener('change', updateVariants)
 
-playButton.addEventListener('click', () => player.togglePlaying())
+playButton.addEventListener('click', () => player.togglePlaying());
 
 
-document.querySelectorAll('[name$="graph"]').forEach(checkbox => {
-
-	const name = checkbox.name.split('-')[0];
-	player.setGraph(name, checkbox.checked);
-	checkbox.addEventListener('change', ({ currentTarget }) => player.setGraph(name, currentTarget.checked))
-})
+(async () => {
+	for (const checkbox of document.querySelectorAll('[name$="graph"]')) {
+		const name = checkbox.name.split('-')[0];
+		await player.setGraph(name, checkbox.checked);
+		checkbox.addEventListener('change', ({ currentTarget }) => player.setGraph(name, currentTarget.checked))
+	}
+})();
 
 
 if (window.location.search) {
@@ -434,14 +453,24 @@ if (window.location.search) {
 			e = document.querySelector(`[name="${name}"]`)
 		}
 		e.value = value
+		if (name === 'theme') renderTheme()
 	})).then(updateVariants)
 }
+
+(() => {
+	const input = document.querySelector('[name="line-bins"]');
+	binSize = +input.value;
+	input.addEventListener('input', ({ currentTarget: { value } }) => binSize = +value);
+})();
 
 const exportForm = () => {
 	const params = new URLSearchParams()
 	document.querySelectorAll('[name]').forEach(e => {
 		if (e.value) params.append(e.getAttribute('name'), e.value)
 	})
-	console.log(params.toString())
-	navigator.clipboard.writeText(params.toString())
+	return params.toString();
 }
+
+document.querySelector('#save-button').addEventListener('click', () => {
+	window.location.search = exportForm()
+})

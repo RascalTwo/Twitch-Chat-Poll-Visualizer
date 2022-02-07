@@ -30,36 +30,48 @@
 			</details>
 			<div class="controls">
 				<span></span>
+				<button type="button" id="play-button">Play</button>
 				<div>
-					<button type="button" id="play-button">Play</button>
-					<input name="current" placeholder="Current" value="00:00:00:00" autocomplete="off"  />
-					<input name="rate" type="number" min="1" max="100" placeholder="Rate" value="1" />
+					<label>Pie<input name="pie-graph" type="checkbox" checked /></label>
+					<label>Line<input name="line-graph" type="checkbox" checked /></label>
 				</div>
-				<label>Pie<input name="pie-graph" type="checkbox" checked /></label>
-				<input name="start" placeholder="Start" autocomplete="on" value="00:00:00:00" />
-				<input name="end" placeholder="End" autocomplete="off" />
-				<label>Line<input name="line-graph" type="checkbox" checked /></label>
-				<label>Word Cloud<input name="word-graph" type="checkbox" disabled /></label>
+				<label>Start<input name="start" placeholder="Start" autocomplete="on" value="00:00:00:00" /></label>
+				<label>Current<input name="current" placeholder="Current" value="00:00:00:00" autocomplete="off"  /></label>
+				<label>End<input name="end" placeholder="End" autocomplete="off" /></label>
+				<div>
+					<label>
+						Theme
+						<select name="theme">
+							<option>Light</option>
+							<option>Dark</option>
+							<option>Discord</option>
+							<option>Twitter Dim</option>
+						</select>
+					</label>
+					<label>
+						Bins
+						<input name="line-bins" type="number" min="1" max="120" step="1" value="1">
+					</label>
+				</div>
+				<label>Rate<input name="rate" type="number" min="1" max="100" placeholder="Rate" value="1" /></label>
+				<div>
+					<button id="redraw-button">Redraw</button>
+					<button id="save-button">Save</button>
+				</div>
 			</div>
 		</fieldset>
 		<section id="player">
+			<span class="current">0</span>
 			<div>
-				<span class="current">0</span>
 				<canvas></canvas>
 			</div>
 			<div>
-				<span class="current">0</span>
-				<canvas></canvas>
-			</div>
-			<div>
-				<span class="current">0</span>
 				<canvas></canvas>
 			</div>
 		</section>
 		<!--<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js" integrity="sha256-Y26AMvaIfrZ1EQU49pf6H4QzVTrOI8m9wQYKkftBt4s=" crossorigin="anonymous"></script>-->
 		<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
 		<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-		<script src="package/build/index.umd.js"></script>
 		<script src="shlex.js"></script>
 		<script src="index.js"></script>
 	</body>
