@@ -8,6 +8,12 @@ Then you can upload that `.JSON` to this application and customize the different
 
 After you've customized all the settings, you can hit save and copy the generated link to restore your settings!
 
+https://user-images.githubusercontent.com/9403665/156878940-b72b7486-179f-4e02-9075-5c9b7ef969ce.mp4
+
+https://user-images.githubusercontent.com/9403665/156878881-3a594626-15d8-4edb-bfdc-b2315c8e101c.mp4
+
+https://user-images.githubusercontent.com/9403665/156878886-8c32b058-62da-4c1d-bb41-3393d78b3538.mp4
+
 ## Settings
 
 ### Answers
