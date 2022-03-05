@@ -69,7 +69,8 @@ const [addThemeListener, getCurrentTheme, renderTheme] = (() => {
 		'Light': ['white', 'black'],
 		'Dark': ['black', 'white'],
 		'Discord': ['#36393e', 'white'],
-		'Twitter Dim': ['rgb(21, 32, 43)', 'white']
+		'Twitter Dim': ['rgb(21, 32, 43)', 'white'],
+		'GitHub Dark': ['#0d1117', 'white']
 	}
 	const html = document.querySelector('html');
 	const select = document.querySelector('select');

@@ -1,4 +1,4 @@
-# Twitch Chat Poll Visualizer
+# [Twitch Chat Poll Visualizer](https://rascaltwo.github.io/Twitch-Chat-Poll-Visualizer/)
 
 Ever wanted to visualize Twitch chat-based polls? Well this is the application for you!
 
