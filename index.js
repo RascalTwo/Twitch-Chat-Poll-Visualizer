@@ -228,6 +228,11 @@ const player = (() => {
 							datalabels: {
 								color(context) {
 									return context.dataset.data[context.dataIndex] === 0 ? 'transparent' : getCurrentTheme()[1]
+								},
+								textAlign: 'center',
+								formatter(value, context) {
+									const percentage = value / context.dataset.data.reduce((sum, n) => sum + n, 0) * 100
+									return value + '\n' + percentage.toFixed(2) + '%';
 								}
 							},
 							legend: { display: false }
@@ -271,6 +276,12 @@ const player = (() => {
 							datalabels: {
 								color(context) {
 									return context.dataset.data[context.dataIndex] === 0 ? 'transparent' : getCurrentTheme()[1]
+								},
+								textAlign: 'center',
+								formatter(value, context) {
+									if (!value) return '';
+									const percentage = value / context.chart.data.datasets.flatMap(ds => ds.data).filter(Boolean).reduce((sum, n) => sum + n, 0) * 100
+									return value + '\n' + percentage.toFixed(2) + '%';
 								}
 							},
 							legend: { display: false }
