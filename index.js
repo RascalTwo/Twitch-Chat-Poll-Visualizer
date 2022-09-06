@@ -160,45 +160,10 @@ const player = (() => {
 		this.chart = null;
 	}
 	const graphs = {
-		pie: {
-			chart: null,
-			canvas: document.querySelector('canvas'),
-			destroy() {
-				return destroyGraph.call(this);
-			},
-			initialize() {
-				this.canvas.parentElement.classList.remove('hidden');
-				this.chart = new Chart(this.canvas.getContext('2d'), {
-					type: 'pie',
-					plugins: [ChartDataLabels],
-					data: {
-						labels: variants.map(variant => variant.label),
-						datasets: [{
-							data: variants.map(() => 0),
-							backgroundColor: variants.map(variant => variant.color)
-						}]
-					},
-					options: {
-						responsive: true,
-						maintainAspectRatio: false,
-						plugins: {
-							datalabels: {
-								color(context) {
-									return context.dataset.data[context.dataIndex] === 0 ? 'transparent' : getCurrentTheme()[1]
-								}
-							},
-							legend: { display: false }
-						}
-					}
-				})
-			},
-			update() {
-				this.chart.update()
-			}
-		},
 		line: {
 			chart: null,
-			canvas: document.querySelectorAll('canvas')[1],
+			height: 1,
+			canvas: document.querySelectorAll('canvas')[0],
 			destroy() {
 				return destroyGraph.call(this);
 			},
@@ -236,6 +201,89 @@ const player = (() => {
 			getLineColor() {
 				return getCurrentTheme()[1] === 'black' ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.25)';
 			}
+		},
+		pie: {
+			chart: null,
+			height: 0.5,
+			canvas: document.querySelectorAll('canvas')[1],
+			destroy() {
+				return destroyGraph.call(this);
+			},
+			initialize() {
+				this.canvas.parentElement.classList.remove('hidden');
+				this.chart = new Chart(this.canvas.getContext('2d'), {
+					type: 'pie',
+					plugins: [ChartDataLabels],
+					data: {
+						labels: variants.map(variant => variant.label),
+						datasets: [{
+							data: variants.map(() => 0),
+							backgroundColor: variants.map(variant => variant.color)
+						}]
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						plugins: {
+							datalabels: {
+								color(context) {
+									return context.dataset.data[context.dataIndex] === 0 ? 'transparent' : getCurrentTheme()[1]
+								}
+							},
+							legend: { display: false }
+						}
+					}
+				})
+			},
+			update() {
+				this.chart.update()
+			}
+		},
+		bar: {
+			chart: null,
+			height: 0.5,
+			canvas: document.querySelectorAll('canvas')[2],
+			destroy() {
+				return destroyGraph.call(this);
+			},
+			initialize() {
+				const color = this.getLineColor();
+				this.canvas.parentElement.classList.remove('hidden');
+				this.chart = new Chart(this.canvas.getContext('2d'), {
+					type: 'bar',
+					plugins: [ChartDataLabels],
+					data: {
+						labels: variants.map(variant => variant.label),
+						datasets: variants.map(({ color }, vi) => ({
+							data: Array.from({ length: variants.length }, (_, i) => i === vi ? 0 : null),
+							backgroundColor: color,
+							skipNull: true
+						}))
+					},
+					options: {
+						responsive: true,
+						maintainAspectRatio: false,
+						scales: {
+							x: { grid: { color } },
+							y: { grid: { color }, ticks: { precision: 0 } }
+						},
+						plugins: {
+							datalabels: {
+								color(context) {
+									return context.dataset.data[context.dataIndex] === 0 ? 'transparent' : getCurrentTheme()[1]
+								}
+							},
+							legend: { display: false }
+						}
+					}
+				})
+			},
+			update() {
+				this.chart.update()
+			},
+			getLineColor() {
+				return getCurrentTheme()[1] === 'black' ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.25)';
+			}
 		}
 	}
 
@@ -260,6 +308,7 @@ const player = (() => {
 
 		const graphData = {
 			pie: variants.map(() => 0),
+			bar: variants.map(() => 0),
 			line: {
 				labels: { first: '', last: '' },
 				counts: variants.map(() => ({}))
@@ -298,6 +347,7 @@ const player = (() => {
 			if (vis.filter(p => p.length).length !== 1) return;
 			const vi = vis.findIndex(p => p.length)
 			graphData.pie[vi] += change
+			graphData.bar[vi] += change
 			const label = secondsToDHMS(parseInt((m.created_at - messages[0].created_at) / 1000 / binSize) * binSize, places)
 
 			if (!graphData.line.labels.first) graphData.line.labels.first = label;
@@ -307,6 +357,12 @@ const player = (() => {
 		if (graphs.pie.chart && arraysDiffer(graphs.pie.chart.data.datasets[0].data, graphData.pie)) {
 			graphs.pie.chart.data.datasets[0].data = graphData.pie
 			graphs.pie.chart.update();
+		}
+		if (graphs.bar.chart && arraysDiffer(graphs.bar.chart.data.datasets.map((ds, i) => ds.data[i]), graphData.bar)) {
+			for (let i = 0; i < graphData.bar.length; i++){
+				graphs.bar.chart.data.datasets[i].data[i] = graphData.bar[i];
+			}
+			graphs.bar.chart.update();
 		}
 		if (graphs.line.chart && arraysDiffer(graphs.line.chart.data.labels, graphData.line.labels)) {
 			let current = DHMStoSeconds(graphData.line.labels.first.split(':').map(Number));
@@ -336,11 +392,11 @@ const player = (() => {
 				if (!graphs[type].chart) graphs[type].initialize();
 			}
 			else graphs[type].destroy();
-			const activeGraphs = Object.values(graphs).reduce((total, { chart }) => total + (chart ? 1 : 0), 0);
+			const activeVerticalGraphs = Object.values(graphs).reduce((total, { chart, height }) => total + (chart ? height : 0), 0);
 			let currentFound = false;
 			for (const graph of Object.values(graphs).filter(({ chart }) => chart)) {
-				graph.canvas.parentElement.style.height = 85 / activeGraphs + 'vh';
-				graph.chart.options.plugins.legend.display = !currentFound;
+				graph.canvas.parentElement.style.height = 85 / Math.ceil(activeVerticalGraphs) + 'vh';
+				graph.chart.options.plugins.legend.display = !currentFound
 				await delay(1);
 				graph.update();
 				currentFound = true;

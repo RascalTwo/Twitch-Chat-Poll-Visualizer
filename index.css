@@ -84,10 +84,15 @@ summary {
 }
 
 .hidden {
-	display: none;
+	display: none !important;
 }
 
 #player {
 	width: 95vw;
 	margin: auto;
+}
+
+#player .inline {
+	width: 45vw;
+	display: inline-block;
 }

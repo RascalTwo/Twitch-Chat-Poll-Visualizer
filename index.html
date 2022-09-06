@@ -34,6 +34,7 @@
 				<button type="button" id="play-button">Play</button>
 				<div>
 					<label>Pie<input name="pie-graph" type="checkbox" checked /></label>
+					<label>Bar<input name="bar-graph" type="checkbox" checked /></label>
 					<label>Line<input name="line-graph" type="checkbox" checked /></label>
 				</div>
 				<label>Start<input name="start" placeholder="Start" autocomplete="on" value="00:00:00:00" /></label>
@@ -63,11 +64,14 @@
 			</div>
 		</fieldset>
 		<section id="player">
-			<span class="current">0</span>
+			<div class="current">0</div>
 			<div>
 				<canvas></canvas>
 			</div>
-			<div>
+			<div class="inline">
+				<canvas></canvas>
+			</div>
+			<div class="inline">
 				<canvas></canvas>
 			</div>
 		</section>
